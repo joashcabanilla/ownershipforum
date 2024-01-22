@@ -3,7 +3,20 @@
     include('session.php');
     $result=mysqli_query($con, "select * from users where user_id='$session_id'")or die('Error In Session');
     $row=mysqli_fetch_array($result);
-    ?>
+    $forumDateOptions = "<option value='2024-02-03'>02/03/2024</option>
+    <option value='2024-02-04'>02/04/2024</option>
+    <option value='2024-02-05'>02/05/2024</option>";
+
+    $branch = "<option value='BSILANG OFFICE'>BSILANG OFFICE</option>
+    <option value='BULACAN OFFICE'>BULACAN OFFICE</option>
+    <option value='CAMARIN OFFICE'>CAMARIN OFFICE</option>
+    <option value='FAIRVIEW OFFICE'>FAIRVIEW OFFICE</option>
+    <option value='KIKO OFFICE'>KIKO OFFICE</option>
+    <option value='LAGRO OFFICE'>LAGRO OFFICE</option>
+    <option value='MAIN OFFICE'>MAIN OFFICE</option>
+    <option value='MUNOZ OFFICE'>MUNOZ OFFICE</option>
+    <option value='TSORA OFFICE'>TSORA OFFICE</option>";
+?>
 <!doctype html>
 <html lang="en">
     <head>
@@ -83,6 +96,9 @@
                                 </div>';
                         }
                     ?>
+                    <div class="pull-left">
+                        <button data-id="" data-bs-toggle="modal" data-bs-target="#reportModal"   class="btn btn-success btn-sm fw-bolder" >Generate Report</button>
+                    </div>
                     <br><br>    
                     <div class="table-responsive">
                         <table id="frmMember" class="table table-condensed table-hover" style="margin-right:20px;">
@@ -314,7 +330,7 @@
                $('#incentiveField').val(json.incentive);
             //   $('#forum_attendedField').val(json.forum_attended ? json.forum_attended : 'Face to Face');
                 $('#forum_attendedField').val('Online');
-               $('#forum_dateField').val(defaultForumDate());
+            //    $('#forum_dateField').val(defaultForumDate());
                $('#id').val(id);
                $('#trid').val(trid);
              }
@@ -448,10 +464,7 @@
                                 <div class="col-md-9">
                                     <!-- <input type="date"  id="forum_dateField" name="forum_date" style="font-size:1.5rem" required> -->
                                     <select name="forum_date" class="form-control" id="forum_dateField" required>
-                                        <option value="2023-02-19">02/19/2023</option>
-                                        <option value="2023-02-20">02/20/2023</option>
-                                        <option value="2023-02-21">02/21/2023</option>
-                                        <option value="2023-02-24">02/24/2023</option>
+                                        <?php echo $forumDateOptions;?>
                                     </select>
                                     <input type="hidden" class="form-control" id="updated_count" name="updated_count" value="1" >
                                 </div>
@@ -584,6 +597,60 @@
                 </div>
             </div>
         </div>
+
+        <!-- REPORT MODAL -->
+        <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">GENERATE REPORT</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="reportForm" method="POST" target="_blank">
+                            <input type="text" name="reportTitle" id="reportTitle" hidden/>
+                            <input type="text" name="reportUser" id="reportUser" hidden/>
+                            <div class="row">
+                                <div class="col-12">
+                                    <label for="reportName" class="form-label fw-bolder">Select Report</label>
+                                    <select class="form-control" id="reportName" name="reportType" required autocomplete="false">
+                                        <option value="1">List of registered members encoded by the current user</option>
+                                        <option value="2">List of all registered members</option>
+                                        <option value="3">Tally of registration</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <label for="reportBranch" class="form-label fw-bolder">Branch</label>
+                                    <select class="form-control" id="reportBranch" name="branch">
+                                        <option value="">-- ALL --</option>
+                                        <?php echo $branch;?>
+                                    </select>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <label for="reportForumDate" class="form-label fw-bolder">Forum Date</label>
+                                    <select class="form-control" id="reportForumDate" name="forumDate">
+                                        <option value="">-- ALL --</option>
+                                        <?php echo $forumDateOptions;?>
+                                    </select>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <label for="reportSchedule" class="form-label fw-bolder">Schedule</label>
+                                    <select class="form-control" id="reportSchedule" name="schedule">
+                                        <option value="">AM & PM</option>
+                                        <option value="AM">AM</option>
+                                        <option value="PM">PM</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-success text-white fw-bolder" id="generatePDF">PDF</button>
+                        <!-- <button class="btn btn-success text-white fw-bolder" id="generateExcel">EXCEL</button> -->
+                    </div>
+                </div>
+            </div>
+        </div>
         <!--<footer class="main-footer">-->
         <!--  <div style="float:right;margin-right:135px;font-size:12px;"><strong>© 2022 <a href="https://ownershipforum.novadeci.com/forum-utility/">JV</a></strong> All rights reserved.-->
         <!--  <a href="add_member.php" data-id="" data-bs-toggle="modal" data-bs-target="#addMemberModal"><i class="fa fa-plus" aria-hidden="true"></i></a>-->
@@ -592,5 +659,38 @@
     </body>
 </html>
 <script type="text/javascript">
-    //var table = $('#frmMember').DataTable();
+    function getReportTitle(reportId){
+        switch(parseInt(reportId)){
+            case 1:
+            case 2:
+                title = "List of registered members";
+            break;
+
+            case 3:
+                title = "Tally of registration";
+            break;
+        }
+        $("#reportUser").val($("#staff_name").val());
+        $("#reportTitle").val(title);
+    }
+
+    $("#reportModal").on('shown.bs.modal',function(event){
+        $("#reportBranch").val("");
+        $("#reportName").val("1");
+        $("#reportForumDate").val("");
+    });
+
+    $("#generatePDF").click((e) => {
+        e.preventDefault();
+        $("#reportForm").attr("action","generatePDF.php");
+        getReportTitle($("#reportName").val());
+        $("#reportForm").submit();
+    });
+
+    $("#generateExcel").click((e) => {
+        e.preventDefault();
+        $("#reportForm").attr("action","generateExcel.php");
+        getReportTitle($("#reportName").val());
+        $("#reportForm").submit();
+    });
 </script>
