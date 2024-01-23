@@ -3,7 +3,69 @@
     include('session.php');
     $result=mysqli_query($con, "select * from users where user_id='$session_id'")or die('Error In Session');
     $row=mysqli_fetch_array($result);
-    ?>
+
+    $sql = "SELECT * FROM members";
+    $totalRegistered = $totalRecords = 0;
+    $result = $con->query($sql);
+    if ($result->num_rows > 0) {
+        $totalRecords = number_format(count($result->fetch_all(MYSQLI_ASSOC)));
+    }
+
+    $sql = "SELECT * FROM members WHERE isregistered ='YES' ORDER BY branch";
+    $result = $con->query($sql);
+    $memberData = array();
+    if ($result->num_rows > 0) {
+        $memberData = $result->fetch_all(MYSQLI_ASSOC);
+    }
+    $totalRegistered = number_format(count($memberData));
+    $dayTally = [
+        "2024-02-03" => [
+            "total" => [],
+            "AM" => [],
+            "PM" => []
+        ],
+        "2024-02-04" => [
+            "total" => [],
+            "AM" => [],
+            "PM" => []
+        ],
+        "2024-02-05" => [
+            "total" => [],
+            "AM" => [],
+            "PM" => []
+        ]
+    ];
+
+    $branchTally = $branchTotal = array();
+    $branchLabelArray = [
+        "BSILANG",
+        "BULACAN",
+        "CAMARIN",
+        "FAIRVIEW",
+        "KIKO",
+        "LAGRO",
+        "MAIN OFFICE",
+        "MUNOZ",
+        "TSORA"
+    ];
+
+    $dayArray = [
+        "day1" => "2024-02-03",
+        "day2" => "2024-02-04",
+        "day3" => "2024-02-05"
+    ];
+    
+    foreach($memberData as $data){
+        $sched = date("A",strtotime($data['forum_day']));
+        $dayTally[$data['forum_date']]["total"][] = $data['fullname'];
+        $dayTally[$data['forum_date']][$sched][] = $data['fullname'];
+        
+        $branchData = strtoupper($data['branch'] != "MAIN OFFICE") ? strtoupper(str_replace(' ','',str_replace("OFFICE",'',$data['branch']))) : strtoupper($data['branch']);
+
+        $branchTally[$branchData][$data['forum_date']][$sched][] = $data['fullname'];
+        $branchTotal[$branchData][] = $data['fullname'];
+    }
+?>
 <!DOCTYPE html>
 <html>
     <head>
@@ -17,9 +79,7 @@
         <link rel="stylesheet" href="bower_components/Ionicons/css/ionicons.min.css">
         <link rel="stylesheet" href="dist/css/AdminLTE.min.css">
         <link rel="stylesheet" href="dist/css/skins/skin-green.min.css">
-        <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic"> -->
         <link rel="stylesheet" type="text/css" href="dist/css/dashboard_style.css">
-        <!-- <link rel="stylesheet" type="text/css" href="../dist/css/font-awesome.min.css"> -->
         <style media="screen, print">
             div.greenTable {
             /* font-family: Georgia, serif; */
@@ -93,10 +153,6 @@
             text-align: left;
             border-left: 2px solid #24943A;
             }
-            /* {
-            overflow-y: hidden;
-            overflow-x: hidden;
-            } */
         </style>
         
         <style media="print">
@@ -131,11 +187,8 @@
                                 </div>
                                 <div class="text-section">
                                     <a href="#">
-                                    <?php
-                                        foreach($con->query('SELECT SUM(count)
-                                        FROM members') as $row) {
-                                        echo "<h1 style='color:white;'>".number_format($row['SUM(count)'])."</h1>";
-                                        }
+                                        <?php
+                                            echo "<h1 style='color:white;'>".$totalRecords."</h1>";
                                         ?>
                                     </a>
                                 </div>
@@ -156,11 +209,8 @@
                                 <div class="text-section">
                                     <a href="#">
                                     <?php
-                                        foreach($con->query('SELECT SUM(updated_count)
-                                        FROM members where isregistered="YES"') as $row) {
-                                        echo "<h1 style='color:white;'>".number_format($row['SUM(updated_count)'])."</h1>";
-                                        }
-                                        ?>
+                                        echo "<h1 style='color:white;'>".$totalRegistered."</h1>";
+                                    ?>
                                     </a>
                                 </div>
                                 <div style="clear:both;"></div>
@@ -179,11 +229,8 @@
                                 </div>
                                 <div class="text-section">
                                     <a href="#">
-                                    <?php
-                                        foreach($con->query('SELECT SUM(updated_count)
-                                        FROM members where forum_date="2023-02-19"') as $row) {
-                                        echo "<h1 style='color:white;'>".number_format($row['SUM(updated_count)'])."</h1>";
-                                        }
+                                        <?php
+                                            echo "<h1 style='color:white;'>".number_format(count($dayTally["2024-02-03"]["total"]))."</h1>";
                                         ?>
                                     </a>
                                 </div>
@@ -194,17 +241,11 @@
                                 <table style='width:100% !important; font-size: 15px;'>
                                     <tr style="text-align:center;">
                                         <td>AM: <?php
-                                                    foreach($con->query('SELECT SUM(updated_count)
-                                                        FROM members where forum_date="2023-02-19" and forum_day <= "2023-02-19 03:59:59"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                    }
+                                                    echo number_format(count($dayTally["2024-02-03"]["AM"]));
                                                 ?>
                                         </td>
                                         <td>PM: <?php
-                                                    foreach($con->query('SELECT SUM(updated_count)
-                                                        FROM members where forum_date="2023-02-19" and forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                    }
+                                                    echo number_format(count($dayTally["2024-02-03"]["PM"]));
                                                 ?>
                                         </td>
                                     </tr>
@@ -222,11 +263,8 @@
                                 </div>
                                 <div class="text-section">
                                     <a href="#">
-                                    <?php
-                                        foreach($con->query('SELECT SUM(updated_count)
-                                        FROM members where forum_date="2023-02-20"') as $row) {
-                                        echo "<h1 style='color:white;'>".number_format($row['SUM(updated_count)'])."</h1>";
-                                        }
+                                        <?php
+                                            echo "<h1 style='color:white;'>".number_format(count($dayTally["2024-02-04"]["total"]))."</h1>";
                                         ?>
                                     </a>
                                 </div>
@@ -236,17 +274,11 @@
                                 <table style='width:100% !important; font-size: 15px;'>
                                     <tr style="text-align:center;">
                                         <td>AM: <?php
-                                                    foreach($con->query('SELECT SUM(updated_count)
-                                                        FROM members where forum_date="2023-02-20" and forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                    }
+                                                    echo number_format(count($dayTally["2024-02-04"]["AM"]));
                                                 ?>
                                         </td>
                                         <td>PM: <?php
-                                                    foreach($con->query('SELECT SUM(updated_count)
-                                                        FROM members where forum_date="2023-02-20" and forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                    }
+                                                    echo number_format(count($dayTally["2024-02-04"]["PM"]));
                                                 ?>
                                         </td>
                                     </tr>
@@ -263,11 +295,8 @@
                                 </div>
                                 <div class="text-section">
                                     <a href="#">
-                                    <?php
-                                        foreach($con->query('SELECT SUM(updated_count)
-                                        FROM members where forum_date="2023-02-21"') as $row) {
-                                        echo "<h1 style='color:white;'>".number_format($row['SUM(updated_count)'])."</h1>";
-                                        }
+                                        <?php
+                                            echo "<h1 style='color:white;'>".number_format(count($dayTally["2024-02-05"]["total"]))."</h1>";
                                         ?>
                                     </a>
                                 </div>
@@ -277,50 +306,17 @@
                                 <table style='width:100% !important; font-size: 15px;'>
                                     <tr style="text-align:center;">
                                         <td>AM: <?php
-                                                    foreach($con->query('SELECT SUM(updated_count)
-                                                        FROM members where forum_date="2023-02-21" and forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                    }
+                                                    echo number_format(count($dayTally["2024-02-05"]["AM"]));
                                                 ?>
                                         </td>
                                         <td>PM: <?php
-                                                    foreach($con->query('SELECT SUM(updated_count)
-                                                        FROM members where forum_date="2023-02-21" and forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                    }
+                                                    echo number_format(count($dayTally["2024-02-05"]["PM"]));
                                                 ?>
                                         </td>
                                     </tr>
                                 </table>
                             </div>
                         </div>
-                        <!-- <div class="dashbord bsilang-content col-md-2" id="inner-div" >
-                                <div class="title-section">
-                                    <p><b>DAY 4</b></p>
-                                </div>
-                                <div class="icon-text-section">
-                                    <div class="icon-section">
-                                        <i class="fa fa-spinner" aria-hidden="true"></i>
-                                    </div>
-                                    <div class="text-section">
-                                        <a href="#">
-                                        <?php
-                                    // foreach($con->query('SELECT SUM(updated_count)
-                                    // FROM members where forum_date="2022-02-26"') as $row) {
-                                    // echo "<h1 style='color:white;'>".number_format($row['SUM(updated_count)'])."</h1>";
-                                    // }
-                                    ?>
-                                            </a>
-                                    </div>
-                                    <div style="clear:both;"></div>
-                                </div>
-                                <div class="detail-section">
-                                    <a href="#">
-                                        <p><b>02/26/2022</b></p>
-                                        <i class="fa fa-arrow-right" aria-hidden="true"></i>
-                                    </a>
-                                </div>
-                                </div> -->
                     </div>
 
                     <div class="row">
@@ -330,10 +326,9 @@
                             <div class="divTableHeading">
                                 <div class="divTableRow">
                                     <div class="divTableHead" style="width:200px;text-align:center;"></div>
-                                    <div class="divTableHead" style="width:100px;text-align:center;"><u>DAY 1</u> - <i>FEB 19</i></div>
-                                    <div class="divTableHead" style="width:100px;text-align:center;"><u>DAY 2</u> - <i>FEB 20</i></div>
-                                    <div class="divTableHead" style="width:100px;text-align:center;"><u>DAY 3</u> - <i>FEB 21</i></div>
-                                    <!-- <div class="divTableHead" style="width:100px;text-align:center;">DAY 4 02/26/2022</div> -->
+                                    <div class="divTableHead" style="width:100px;text-align:center;"><u>DAY 1</u> - <i>FEB 3</i></div>
+                                    <div class="divTableHead" style="width:100px;text-align:center;"><u>DAY 2</u> - <i>FEB 4</i></div>
+                                    <div class="divTableHead" style="width:100px;text-align:center;"><u>DAY 3</u> - <i>FEB 5</i></div>
                                     <div class="divTableHead" style="width:100px;text-align:center;">TOTAL</div>
                                 </div>
                                 <div class="divTableRow">
@@ -341,1066 +336,77 @@
                                     <div class="divTableHead" style="width:100px;text-align:center;">AM &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PM</div>
                                     <div class="divTableHead" style="width:100px;text-align:center;">AM &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PM</div>
                                     <div class="divTableHead" style="width:100px;text-align:center;">AM &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PM</div>
-                                    <!-- <div class="divTableHead" style="width:100px;text-align:center;">DAY 4 02/26/2022</div> -->
                                     <div class="divTableHead" style="width:100px;text-align:center;"></div>
                                 </div>
                             </div>
-                            <div class="divTableBody">
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">BSILANG</div>
-                                    <div class="divTableCell">
-                                         <table style='width:100% !important; font-size: 19px'>
-                                            <tr>
-                                                <!--<td>-->
-                                                    <?php
-                                                        // foreach($con->query('SELECT SUM(updated_count)
-                                                        // FROM members where forum_date="2023-02-19" AND Branch="BSILANG OFFICE"') as $row) {
-                                                        //     echo number_format($row['SUM(updated_count)']);
-                                                        // }
-                                                    ?>
-                                                <!--</td>-->
-                                                <td style="width: 50% !important;">
-                                                    <?php
-                                                    // 03:59:59 = 11:59 AM in PH
-                                                        foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59"
-                                                        and forum_date="2023-02-19" AND Branch="BSILANG OFFICE"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                        }
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <?php
-                                                    // 09:00:00 = 5pm in PH
-                                                        foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                         and forum_date="2023-02-19" AND Branch="BSILANG OFFICE"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                        }
-                                                    ?>
-                                                </td>
-                                            </tr>
-                                        </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                            <tr>
-                                                <!--<td>-->
-                                                    <?php
-                                                        // foreach($con->query('SELECT SUM(updated_count)
-                                                        // FROM members where forum_date="2023-02-20" AND Branch="BSILANG OFFICE"') as $row) {
-                                                        //     echo number_format($row['SUM(updated_count)']);
-                                                        // }
-                                                    ?>
-                                                <!--</td>-->
-                                                <td style="width: 50% !important;">
-                                                    <?php
-                                                    // 03:59:59 = 11:59 AM in PH
-                                                        foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59" 
-                                                        and forum_date="2023-02-20" AND Branch="BSILANG OFFICE"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                        }
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <?php
-                                                    // 09:00:00 = 5pm in PH
-                                                        foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                         and forum_date="2023-02-20" AND Branch="BSILANG OFFICE"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                        }
-                                                    ?>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                            <tr>
-                                                <!--<td>-->
-                                                    <?php
-                                                        // foreach($con->query('SELECT SUM(updated_count)
-                                                        // FROM members where forum_date="2023-02-21" AND Branch="BSILANG OFFICE"') as $row) {
-                                                        //     echo number_format($row['SUM(updated_count)']);
-                                                        // }
-                                                    ?>
-                                                <!--</td>-->
-                                                <td style="width: 50% !important;">
-                                                    <?php
-                                                    // 04:00:00 = 12pm in PH
-                                                        foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59"
-                                                        and forum_date="2023-02-21" AND Branch="BSILANG OFFICE"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                        }
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <?php
-                                                    // 09:00:00 = 5pm in PH
-                                                        foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                         and forum_date="2023-02-21" AND Branch="BSILANG OFFICE"') as $row) {
-                                                            echo number_format($row['SUM(updated_count)']);
-                                                        }
-                                                    ?>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="BSILANG OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="BSILANG OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
-                                
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">BULACAN</div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-19" AND Branch="BULACAN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59" 
-                                                       and forum_date="2023-02-19" AND Branch="BULACAN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                        and forum_date="2023-02-19" AND Branch="BULACAN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-20" AND Branch="BULACAN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59"
-                                                       and forum_date="2023-02-20" AND Branch="BULACAN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                        and forum_date="2023-02-20" AND Branch="BULACAN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-21" AND Branch="BULACAN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59" 
-                                                       and forum_date="2023-02-21" AND Branch="BULACAN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                        and forum_date="2023-02-21" AND Branch="BULACAN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="BULACAN OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="BULACAN OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
-                                
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">CAMARIN</div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-19" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59" 
-                                                       and forum_date="2023-02-19" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                        and forum_date="2023-02-19" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-20" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59"  
-                                                       and forum_date="2023-02-20" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                        and forum_date="2023-02-20" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-21" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where  forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59"  
-                                                       and forum_date="2023-02-21" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                        and forum_date="2023-02-21" AND Branch="CAMARIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="CAMARIN OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="CAMARIN OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
-                                
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">FAIRVIEW</div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-19" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59" 
-                                                       and forum_date="2023-02-19" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                        and forum_date="2023-02-19" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-20" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59" 
-                                                       and forum_date="2023-02-20" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                        and forum_date="2023-02-20" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-21" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59"
-                                                       and forum_date="2023-02-21" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                        and forum_date="2023-02-21" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="FAIRVIEW OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
-                                
-                                
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">KIKO</div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-19" AND Branch="KIKO OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59" 
-                                                       and forum_date="2023-02-19" AND Branch="KIKO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                        and forum_date="2023-02-19" AND Branch="KIKO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-20" AND Branch="KIKO OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59"
-                                                       and forum_date="2023-02-20" AND Branch="KIKO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                        and forum_date="2023-02-20" AND Branch="KIKO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-21" AND Branch="KIKO OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59"
-                                                       and forum_date="2023-02-21" AND Branch="KIKO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                        and forum_date="2023-02-21" AND Branch="KIKO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="KIKO OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="KIKO OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
-                                
-                                
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">LAGRO</div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-19" AND Branch="LAGRO OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59" 
-                                                       and forum_date="2023-02-19" AND Branch="LAGRO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                        and forum_date="2023-02-19" AND Branch="LAGRO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-20" AND Branch="LAGRO OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59"
-                                                       and forum_date="2023-02-20" AND Branch="LAGRO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                        and forum_date="2023-02-20" AND Branch="LAGRO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-21" AND Branch="LAGRO OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59" 
-                                                       and forum_date="2023-02-21" AND Branch="LAGRO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                        and forum_date="2023-02-21" AND Branch="LAGRO OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="LAGRO OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="LAGRO OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
-                                
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">MAIN OFFICE</div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-19" AND Branch="MAIN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59" 
-                                                       and forum_date="2023-02-19" AND Branch="MAIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                        and forum_date="2023-02-19" AND Branch="MAIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-20" AND Branch="MAIN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59"
-                                                       and forum_date="2023-02-20" AND Branch="MAIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                        and forum_date="2023-02-20" AND Branch="MAIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-21" AND Branch="MAIN OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59"
-                                                       and forum_date="2023-02-21" AND Branch="MAIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                        and forum_date="2023-02-21" AND Branch="MAIN OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="MAIN OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="MAIN OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
-                                
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">MUÑOZ</div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-19" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59" 
-                                                       and forum_date="2023-02-19" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                        and forum_date="2023-02-19" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-20" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59"
-                                                       and forum_date="2023-02-20" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                        and forum_date="2023-02-20" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-21" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59"
-                                                       and forum_date="2023-02-21" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                        and forum_date="2023-02-21" AND Branch="MUNOZ OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="MUNOZ OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="MUNOZ OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
-                                
-                                
-                                
-                                <div class="divTableRow">
-                                    <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">TSORA</div>
-                                    <div class="divTableCell">
-                                        <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-19" AND Branch="TSORA OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day <= "2023-02-19 03:59:59" 
-                                                       and forum_date="2023-02-19" AND Branch="TSORA OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 04:00:00" and forum_day <= "2023-02-19 09:00:00"
-                                                        and forum_date="2023-02-19" AND Branch="TSORA OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table> 
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-20" AND Branch="TSORA OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-19 16:00:00" and forum_day <= "2023-02-20 03:59:59"
-                                                       and forum_date="2023-02-20" AND Branch="TSORA OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 04:00:00" and forum_day <= "2023-02-20 09:00:00"
-                                                        and forum_date="2023-02-20" AND Branch="TSORA OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <div class="divTableCell">
-                                       <table style='width:100% !important; font-size: 19px'>
-                                           <tr>
-                                               <!--<td>-->
-                                                   <?php
-                                                       // foreach($con->query('SELECT SUM(updated_count)
-                                                       // FROM members where forum_date="2023-02-21" AND Branch="TSORA OFFICE"') as $row) {
-                                                       //     echo number_format($row['SUM(updated_count)']);
-                                                       // }
-                                                   ?>
-                                               <!--</td>-->
-                                               <td style="width: 50% !important;">
-                                                   <?php
-                                                   // 04:00:00 = 12pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-20 16:00:00" and forum_day <= "2023-02-21 03:59:59"
-                                                       and forum_date="2023-02-21" AND Branch="TSORA OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                               <td>
-                                                   <?php
-                                                   // 09:00:00 = 5pm in PH
-                                                       foreach($con->query('select SUM(updated_count) from members where forum_day >= "2023-02-21 04:00:00" and forum_day <= "2023-02-21 09:00:00"
-                                                        and forum_date="2023-02-21" AND Branch="TSORA OFFICE"') as $row) {
-                                                           echo number_format($row['SUM(updated_count)']);
-                                                       }
-                                                   ?>
-                                               </td>
-                                           </tr>
-                                       </table>
-                                    </div>
-                                    <!-- <div class="divTableCell">
-                                        <?php
-                                            // foreach($con->query('SELECT SUM(updated_count)
-                                            // FROM members where forum_date="2022-02-26" AND Branch="TSORA OFFICE"') as $row) {
-                                            // echo "<h4>".number_format($row['SUM(updated_count)'])."</h4>";
-                                            // }
-                                            ?>
-                                        </div> -->
-                                    <div class="divTableCell">
-                                        <?php
-                                            foreach($con->query('SELECT SUM(updated_count)
-                                            FROM members where isregistered="YES" AND Branch="TSORA OFFICE"') as $row) {
-                                            echo "<h4><b>".number_format($row['SUM(updated_count)'])."</b></h4>";
-                                            }
-                                            ?>
-                                    </div>
-                                </div>
+                            <div class="divTableBody">                                
+                                <?php 
+                                    foreach($branchLabelArray as $branch){
+
+                                        $total = isset($branchTotal[$branch]) ? number_format(count($branchTotal[$branch])) : 0;
+
+                                        $tally = [
+                                            "day1" => [
+                                                "AM" => isset($branchTally[$branch][$dayArray["day1"]]["AM"]) ? number_format(count($branchTally[$branch][$dayArray["day1"]]["AM"])) : 0,
+
+                                                "PM" => isset($branchTally[$branch][$dayArray["day1"]]["PM"]) ? number_format(count($branchTally[$branch][$dayArray["day1"]]["PM"])) : 0
+                                            ],
+                                            "day2" => [
+                                                "AM" => isset($branchTally[$branch][$dayArray["day2"]]["AM"]) ? number_format(count($branchTally[$branch][$dayArray["day2"]]["AM"])) : 0,
+
+                                                "PM" => isset($branchTally[$branch][$dayArray["day2"]]["PM"]) ? number_format(count($branchTally[$branch][$dayArray["day2"]]["PM"])) : 0
+                                            ],
+                                            "day3" => [
+                                                "AM" => isset($branchTally[$branch][$dayArray["day3"]]["AM"]) ? number_format(count($branchTally[$branch][$dayArray["day3"]]["AM"])) : 0,
+
+                                                "PM" => isset($branchTally[$branch][$dayArray["day3"]]["PM"]) ? number_format(count($branchTally[$branch][$dayArray["day3"]]["PM"])) : 0
+                                            ],
+                                        ];
+
+                                        echo '<div class="divTableRow">
+                                        <div class="divTableHeading2" style="font-size:19px;color:white;padding:10px;">'.$branch.'</div>';
+                                        echo '<div class="divTableCell">
+                                             <table style="width:100% !important; font-size: 19px">
+                                                <tr>
+                                                    <td style="width: 50% !important;">
+                                                        '.$tally['day1']["AM"].'
+                                                    </td>
+                                                    <td>
+                                                        '.$tally['day1']["PM"].'
+                                                    </td>
+                                                </tr>
+                                            </table> 
+                                        </div>
+                                        <div class="divTableCell">
+                                            <table style="width:100% !important; font-size: 19px">
+                                                <tr>
+                                                    <td style="width: 50% !important;">
+                                                        '.$tally['day2']["AM"].'
+                                                    </td>
+                                                    <td>
+                                                        '.$tally['day2']["PM"].'
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="divTableCell">
+                                            <table style="width:100% !important; font-size: 19px">
+                                                <tr>
+                                                    <td style="width: 50% !important;">
+                                                        '.$tally['day3']["AM"].'
+                                                    </td>
+                                                    <td>
+                                                        '.$tally['day3']["PM"].'
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="divTableCell">
+                                        <h4><b>'.$total.'</b></h4>
+                                        </div>
+                                    </div>';
+                                    }
+                                ?>
                             </div>
                         </div>
                     </div>
