@@ -192,6 +192,7 @@
                    var status = json.status;
                    if(status=='true')
                    {
+                    alert('Successfully Saved.');
                     mytable =$('#frmMember').DataTable();
                     mytable.draw();
                     $('#addMemberModal').modal('hide');
