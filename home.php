@@ -15,6 +15,7 @@
     <option value='LAGRO OFFICE'>LAGRO OFFICE</option>
     <option value='MAIN OFFICE'>MAIN OFFICE</option>
     <option value='MUNOZ OFFICE'>MUNOZ OFFICE</option>
+    <option value='NUEVA ECIJA OFFICE'>NUEVA ECIJA OFFICE</option>
     <option value='TSORA OFFICE'>TSORA OFFICE</option>";
 ?>
 <!doctype html>
@@ -184,7 +185,6 @@
                $.ajax({
                  url:"add_member.php",
                  type:"post",
-                //  data:{mem_id:mem_id,fullname:fullname,bday:bday,stat:stat,membership_date:membership_date,branch:branch,isregistered:isregistered,count:count},
                  data:{mem_id:mem_id,pbno:pbno,fullname:fullname,bday:bday,stat:stat,membership_date:membership_date,branch:branch,isregistered:isregistered,count:count},
                  success:function(data)
                  {
@@ -517,7 +517,11 @@
                             <div class="mb-3 row">
                                 <label for="addstatField" class="col-md-3 form-label">Status</label>
                                 <div class="col-md-9">
-                                    <input type="text" class="form-control" id="addstatField" name="stat" >
+                                    <!-- <input type="text" class="form-control" id="addstatField" name="stat" > -->
+                                    <select class="form-control" name="stat" id="addstatField">
+                                        <option value="MIGS">MIGS</option>
+                                        <option value="NONMIGS">NONMIGS</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="mb-3 row">
@@ -532,7 +536,8 @@
                                     <!--  <input type="text" class="form-control" id="addbranchField" name="branch" >-->
                                     <select class="form-control" name="branch" id="chooseBranch" required>
                                         <option value=""></option>
-                                        <option value="BSILANG OFFICE">Bagong Silang</option>
+                                        <?php echo $branch;?>
+                                        <!-- <option value="BSILANG OFFICE">Bagong Silang</option>
                                         <option value="BULACAN OFFICE">Bulacan</option>
                                         <option value="CAMARIN OFFICE">Camarin</option>
                                         <option value="FAIRVIEW OFFICE">Fairview</option>
@@ -540,7 +545,7 @@
                                         <option value="LAGRO OFFICE">Lagro</option>
                                         <option value="MUNOZ OFFICE">Muñoz</option>
                                         <option value="MAIN OFFICE" selected>Main Office</option>
-                                        <option value="TSORA OFFICE">Tandang Sora</option>
+                                        <option value="TSORA OFFICE">Tandang Sora</option> -->
                                     </select>
                                 </div>
                             </div>
@@ -692,5 +697,15 @@
         $("#reportForm").attr("action","generateExcel.php");
         getReportTitle($("#reportName").val());
         $("#reportForm").submit();
+    });
+
+    $("#addMemberModal").on('show.bs.modal',function(event){
+        $("#addmem_idField").val("");
+        $("#addpbnoField").val(".");
+        $("#addfullnameField").val("");
+        $("#addbdayField").val("");
+        $("#addstatField").val("");
+        $("#addmembership_dateField").val("");
+        $("#chooseBranch").val("");
     });
 </script>
