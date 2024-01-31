@@ -51,6 +51,9 @@
                 width: 450px;
                 height: 30px;
             }
+            #frmMember_filter input{
+                width: 570px !important;
+            }
         </style>
         <script language="JavaScript">
             function showInput() {
@@ -708,5 +711,26 @@
         $("#addstatField").val("");
         $("#addmembership_dateField").val("");
         $("#chooseBranch").val("");
+    });
+
+    const searchFocus = () => {
+        setTimeout(() => {
+            $("#frmMember_filter input").focus();
+        },100);
+    }
+    $(document).ready((e) => {
+        searchFocus();
+    });
+
+    $("#addMemberModal").on('hidden.bs.modal',function(event){
+        searchFocus();
+    });
+
+    $("#reportModal").on('hidden.bs.modal',function(event){
+        searchFocus();
+    });
+
+    $("#updateModal").on('hidden.bs.modal',function(event){
+        searchFocus();
     });
 </script>

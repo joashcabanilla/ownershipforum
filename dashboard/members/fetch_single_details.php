@@ -14,7 +14,7 @@ if(isset($_POST["user_id"]))
 	foreach($result as $row)
 	{
 		$output["mem_id"] = $row["mem_id"];
-		$output["fullname"] = $row["fullname"];
+		$output["fullname"] = utf8_encode($row["fullname"]);
 		$output["branch"] = $row["branch"];
 		if($row["image"] != '')
 		{
