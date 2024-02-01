@@ -46,7 +46,8 @@
         "LAGRO",
         "MAIN OFFICE",
         "MUNOZ",
-        "TSORA"
+        "TSORA",
+        "NUEVA ECIJA"
     ];
 
     $dayArray = [
@@ -60,7 +61,7 @@
         $dayTally[$data['forum_date']]["total"][] = $data['fullname'];
         $dayTally[$data['forum_date']][$sched][] = $data['fullname'];
         
-        $branchData = strtoupper($data['branch'] != "MAIN OFFICE") ? strtoupper(str_replace(' ','',str_replace("OFFICE",'',$data['branch']))) : strtoupper($data['branch']);
+        $branchData = strtoupper($data['branch'] != "MAIN OFFICE") ? strtoupper(trim(str_replace("OFFICE",'',$data['branch']))) : strtoupper($data['branch']);
 
         $branchTally[$branchData][$data['forum_date']][$sched][] = $data['fullname'];
         $branchTotal[$branchData][] = $data['fullname'];

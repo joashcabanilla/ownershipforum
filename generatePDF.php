@@ -214,7 +214,7 @@
             $pdf->addTextWrap($startW+$pdf->C2P(0.1), $hT+$pdf->C2P(0.14), $pdf->C2P(1.8), $fontSize,$data['mem_id'],'left');
             $startW+=$pdf->C2P(1.8);
 
-            $text = $data['fullname'];
+            $text = utf8_decode($data['fullname']);
             $text = $pdf->addTextWrap($startW+$pdf->C2P(0.1), $hT+$pdf->C2P(0.14), $pdf->C2P(4.9), $fontSize,$text,'left');
             $tempH = $hT;
             $lastH[0]= 0;
